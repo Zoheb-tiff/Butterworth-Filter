@@ -1,0 +1,69 @@
+CODE:
+
+
+OriginalImage = dicomread('T2W_Brain.dcm');
+%Image + Random Noise (5%)
+RandNoise5 = double(OriginalImage) + 0.05*randn(length(OriginalImage));
+figure,imagesc(RandNoise5),colorbar,colormap(gray),axis on;
+imhist(RandNoise5), hold on
+%Image + Random Noise (10%)
+RandNoise10 = double(OriginalImage) + 0.1*randn(length(OriginalImage));
+figure,imagesc(RandNoise10),colorbar,colormap(gray),axis on;
+imhist(RandNoise10)
+%Image + Random Noise (20%)
+RandNoise20 = double(OriginalImage) + 0.2*randn(length(OriginalImage));
+figure,imagesc(RandNoise20),colorbar,colormap(gray),axis on;
+imhist(RandNoise20), hold off
+%Padding Size
+PQ = paddedsize(size(OriginalImage))
+% Filter Creation
+H1_101 = bwlpf(PQ(1),PQ(2),101,1);
+H2_202 = bwlpf(PQ(1),PQ(2),202,5);
+H3_303 = bwlpf(PQ(1),PQ(2),303,9);
+ 
+% Fourier Transformed Images
+FTRandNoise5 = fft2(double(RandNoise5),size(H1_101, 1),size(H1_101, 2));
+FTRandNoise10 = fft2(double(RandNoise10),size(H2_202, 1),size(H2_202, 2));
+FTRandNoise20 = fft2(double(RandNoise20),size(H3_303, 1),size(H3_303, 2));
+ 
+Q1=log(1+abs(fftshift(FTRandNoise5)));
+figure,imshow(Q1,[])
+ 
+Q2=log(1+abs(fftshift(FTRandNoise10)));
+figure,imshow(Q2,[])
+ 
+Q3=log(1+abs(fftshift(FTRandNoise20)));
+figure,imshow(Q3,[])
+ 
+ 
+%Multiplying Image with Filter
+G1 = FTRandNoise5 .* H1_101;
+G2 = FTRandNoise10 .* H2_202;
+G3 = FTRandNoise20 .* H3_303;
+ 
+W1=log(1+abs(fftshift(G1)));
+figure,imshow(W1,[])
+ 
+W2=log(1+abs(fftshift(G2)));
+figure,imshow(W2,[])
+ 
+W3=log(1+abs(fftshift(G3)));
+figure,imshow(W3,[])
+%Obtaining real part of Gs
+ 
+g1 = real(ifft2(G1));
+g2 = real(ifft2(G2));
+g3 = real(ifft2(G3));
+ 
+g1=g1(1:size(OriginalImage, 1), 1:size(OriginalImage, 2))
+figure,imagesc(g1),colormap(gray)
+g2=g2(1:size(OriginalImage, 1), 1:size(OriginalImage, 2))
+figure,imagesc(g2),colormap(gray)
+g3=g3(1:size(OriginalImage, 1), 1:size(OriginalImage, 2))
+figure,imagesc(g3),colormap(gray)
+subplot(2,3,1),imagesc(g1),colormap(gray)
+subplot(2,3,2),imagesc(g2),colormap(gray)
+subplot(2,3,3),imagesc(g3),colormap(gray)
+subplot(2,3,4),imagesc(W1),colormap(gray)
+subplot(2,3,5),imagesc(W2),colormap(gray)
+subplot(2,3,6),imagesc(W3),colormap(gray)
